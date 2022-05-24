@@ -16,10 +16,15 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
     // create location manager
     var locationMnager = CLLocationManager()
     
+    // create the places array
+    var places = [Place]()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
         
+        mapView.isZoomEnabled = false
+        mapView.showsUserLocation = true
         
         // assigning the delegate property of the location manager to be this class
         locationMnager.delegate = self
@@ -32,6 +37,16 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
         
         // start updating the location
         locationMnager.startUpdatingLocation()
+        
+        // Creating a double tap gesture recognizer and placing addDoubleTapAnnotattion function as an action
+        let doubleTap = UITapGestureRecognizer(target: self, action: #selector(addDoubleTapAnnotattion))
+        
+        // setting no of taps required as 2
+        doubleTap.numberOfTapsRequired = 2
+        
+        // adding double tap gesture in mapview
+        mapView.addGestureRecognizer(doubleTap)
+        
     }
     
     
@@ -77,7 +92,53 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
         annotation.coordinate = location
         mapView.addAnnotation(annotation)
     }
-
+    
+    // function to add annotations to the places
+    func addAnnotationForPlaces(){
+        
+        // removing all the annotations
+        mapView.removeAnnotations(mapView.annotations)
+        
+        // looping through places list and creating annotations and adding it to mapview
+        for place in places {
+            // add annotation for the coordinatet
+            let annotation = MKPointAnnotation()
+            annotation.title = place.title
+            annotation.subtitle = place.subtitle
+            annotation.coordinate = place.coordinate
+            mapView.addAnnotation(annotation)
+        }
+    }
+    
+    // function to handle double tap in mapview
+    @objc func addDoubleTapAnnotattion(gestureRecognizer: UIGestureRecognizer) {
+        // getting the touch point
+        let touchPoint = gestureRecognizer.location(in: mapView)
+        
+        // converting touch point to coordinate in mapview
+        let coordinate = mapView.convert(touchPoint, toCoordinateFrom: mapView)
+        
+        // appending it to places depending upon if its a first location or second or third
+        if places.count == 0{
+            places.append(Place(title: "A", subtitle: "A", coordinate: coordinate))
+        } else if places.count == 1{
+            places.append(Place(title: "B", subtitle: "B", coordinate: coordinate))
+        } else if places.count == 2{
+            places.append(Place(title: "C", subtitle: "C", coordinate: coordinate))
+            
+            // todo draw a triangle
+        } else {
+            // removing annotation from mapview
+            mapView.removeAnnotations(mapView.annotations)
+            
+            // removing places from the list
+            places = [Place]()
+        }
+        
+        // calling addAnnotationForPlaces function to add annotation for locations
+        addAnnotationForPlaces()
+    }
 
 }
+
 
