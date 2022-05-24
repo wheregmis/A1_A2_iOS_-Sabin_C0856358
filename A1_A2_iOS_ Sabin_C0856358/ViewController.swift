@@ -34,6 +34,50 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
         locationMnager.startUpdatingLocation()
     }
     
-   
+    
+    // Handling did update locations function
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        
+        // Getting the latest location
+        let userLocation = locations[0]
+        
+        // Extracting latitude and longitude from the location coordinate
+        let latitude = userLocation.coordinate.latitude
+        let longitude = userLocation.coordinate.longitude
+        
+        // calling displayLocation function to display the location of the user
+        displayLocation(latitude: latitude, longitude: longitude, title: "My Location", subtitle: "I am here")
+    }
+    
+    // Function to display user location in mapview
+    func displayLocation(latitude: CLLocationDegrees,
+                         longitude: CLLocationDegrees,
+                         title: String,
+                         subtitle: String) {
+        
+        // Defining span
+        let latDelta: CLLocationDegrees = 0.05
+        let lngDelta: CLLocationDegrees = 0.05
+        
+        let span = MKCoordinateSpan(latitudeDelta: latDelta, longitudeDelta: lngDelta)
+        
+        // Defining Location
+        let location = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+        
+        // Defining Region
+        let region = MKCoordinateRegion(center: location, span: span)
+        
+        // Setting up the region in the map
+        mapView.setRegion(region, animated: true)
+        
+        // Adding annotation to the map view
+        let annotation = MKPointAnnotation()
+        annotation.title = title
+        annotation.subtitle = subtitle
+        annotation.coordinate = location
+        mapView.addAnnotation(annotation)
+    }
+
+
 }
 
