@@ -26,6 +26,9 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
         mapView.isZoomEnabled = false
         mapView.showsUserLocation = true
         
+        // giving the delegate of MKMapViewDelegate to this class
+        mapView.delegate = self
+        
         // assigning the delegate property of the location manager to be this class
         locationMnager.delegate = self
         
@@ -126,7 +129,8 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
         } else if places.count == 2{
             places.append(Place(title: "C", subtitle: "C", coordinate: coordinate))
             
-            // todo draw a triangle
+            // forcing to draw polygon when we have 3 coordinates only will create a triangle
+            addPolygon()
         } else {
             // removing annotation from mapview
             mapView.removeAnnotations(mapView.annotations)
@@ -138,7 +142,30 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
         // calling addAnnotationForPlaces function to add annotation for locations
         addAnnotationForPlaces()
     }
+    
+    // function to create a triangle (polygon with 3 coordinate will create a triangle)
+    func addPolygon() {
+        let coordinates = places.map {$0.coordinate}
+        let polygon = MKPolygon(coordinates: coordinates, count: coordinates.count)
+        mapView.addOverlay(polygon)
+    }
 
+}
+
+
+extension ViewController: MKMapViewDelegate {
+    
+    //MARK: - rendrer for overlay func
+    func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+        if overlay is MKPolygon {
+            let rendrer = MKPolygonRenderer(overlay: overlay)
+            rendrer.fillColor = UIColor.red.withAlphaComponent(0.5)
+            rendrer.strokeColor = UIColor.green
+            rendrer.lineWidth = 2
+            return rendrer
+        }
+        return MKOverlayRenderer()
+    }
 }
 
 

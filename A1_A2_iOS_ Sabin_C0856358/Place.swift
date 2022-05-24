@@ -20,19 +20,5 @@ class Place: NSObject, MKAnnotation {
         self.coordinate = coordinate
     }
     
-    static func getPlaces() -> [Place] {
-        
-        var places = [Place]()
-        
-        for place in places {
-            let title = place.title
-            let subtitle = place.subtitle
-            let latitude = place.coordinate.latitude, longitude = place.coordinate.longitude
-            
-            let place = Place(title: title, subtitle: subtitle, coordinate: CLLocationCoordinate2DMake(latitude, longitude))
-            places.append(place)
-        }
-        return places as [Place]
-    }
 }
 
