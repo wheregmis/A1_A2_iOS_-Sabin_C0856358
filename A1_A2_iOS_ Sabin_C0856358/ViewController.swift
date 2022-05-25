@@ -129,27 +129,47 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
         // converting touch point to coordinate in mapview
         let coordinate = mapView.convert(touchPoint, toCoordinateFrom: mapView)
         
-        // appending it to places depending upon if its a first location or second or third
-        if places.count == 0{
-            places.append(Place(title: "A", subtitle: "A", coordinate: coordinate))
-        } else if places.count == 1{
-            places.append(Place(title: "B", subtitle: "B", coordinate: coordinate))
-        } else if places.count == 2{
-            places.append(Place(title: "C", subtitle: "C", coordinate: coordinate))
+        
+        let nearbyMarker = isNearByMarkerAvailable(coordinate: coordinate)
+        if nearbyMarker == "false"{
+            // appending it to places depending upon if its a first location or second or third
+            if places.count == 0{
+                places.append(Place(title: "A", subtitle: "A", coordinate: coordinate))
+            } else if places.count == 1{
+                places.append(Place(title: "B", subtitle: "B", coordinate: coordinate))
+            } else if places.count == 2{
+                places.append(Place(title: "C", subtitle: "C", coordinate: coordinate))
+                
+                // forcing to draw polygon when we have 3 coordinates only will create a triangle
+                addPolygon()
+            } else {
+                // removing annotation from mapview
+                mapView.removeAnnotations(mapView.annotations)
+                mapView.removeOverlays(mapView.overlays)
+                
+                // removing places from the list
+                places = [Place]()
+            }
             
-            // forcing to draw polygon when we have 3 coordinates only will create a triangle
-            addPolygon()
-        } else {
-            // removing annotation from mapview
-            mapView.removeAnnotations(mapView.annotations)
-            mapView.removeOverlays(mapView.overlays)
-            
-            // removing places from the list
-            places = [Place]()
+            // calling addAnnotationForPlaces function to add annotation for locations
+            addAnnotationForPlaces()
+        }else{
+            removePlaces(title: nearbyMarker)
+            addAnnotationForPlaces()
         }
         
-        // calling addAnnotationForPlaces function to add annotation for locations
-        addAnnotationForPlaces()
+    }
+    
+    // function to find the nearby marker
+    func isNearByMarkerAvailable(coordinate:CLLocationCoordinate2D) -> String{
+        for place in places {
+            let location1 = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+            let location2 = CLLocation(latitude: place.coordinate.latitude, longitude: place.coordinate.longitude)
+            if (calculateDistance(location1: location1, location2: location2) < 100){
+                return place.title!
+            }
+        }
+        return "false";
     }
     
     // function to create a triangle (polygon with 3 coordinate will create a triangle)
@@ -159,7 +179,8 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
         mapView.addOverlay(polygon)
     }
     
-    func calculateDistance(markerLat: CLLocationDegrees, markerLong: CLLocationDegrees) -> CLLocationDistance{
+    // function to calculate the distance from user location
+    func calculateDistanceFromUserLocation(markerLat: CLLocationDegrees, markerLong: CLLocationDegrees) -> CLLocationDistance{
         
         // defining the user location
         let userLocation = CLLocation(latitude: userLat, longitude: userLong)
@@ -172,6 +193,26 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
         
         // returning the distance
         return distance;
+    }
+    
+    // function to calculate the distance between two locations
+    func calculateDistance(location1: CLLocation, location2:CLLocation) -> CLLocationDistance{
+        
+        // calculating the distance between marker location and user location in meters
+        let distance: CLLocationDistance = location1.distance(from: location2)
+        
+        // returning the distance
+        return distance;
+    }
+    
+    // function to remove place from places list
+    func removePlaces(title:String){
+        for place in places {
+            if place.title == title{
+                places.remove(at: places.firstIndex(of: place)!)
+            }
+        }
+        
     }
 
 }
@@ -200,7 +241,7 @@ extension ViewController: MKMapViewDelegate {
         let long = view.annotation?.coordinate.longitude;
         
         // calling function to calculate the distance
-        let distance = calculateDistance(markerLat: lat, markerLong: long!)
+        let distance = calculateDistanceFromUserLocation(markerLat: lat, markerLong: long!)
         
         // showing informational alert to show the distance
         let alertController = UIAlertController(title: "Distance", message: "Distance between the marker and user location is \(String(format: "%.3f", distance))} meters", preferredStyle: .alert)
@@ -208,6 +249,7 @@ extension ViewController: MKMapViewDelegate {
         alertController.addAction(cancelAction)
         present(alertController, animated: true, completion: nil)
     }
+    
     
     // function to render overlay for polygon
     func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
