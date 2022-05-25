@@ -261,7 +261,7 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
             
             drawRouteBetweenTwoMarkers(sourceCoordinate: places[1].coordinate, destinationCoordinate: places[2].coordinate)
 
-            drawRouteBetweenTwoMarkers(sourceCoordinate: places[2].coordinate, destinationCoordinate: places[1].coordinate)
+            drawRouteBetweenTwoMarkers(sourceCoordinate: places[2].coordinate, destinationCoordinate: places[0].coordinate)
         } else if places.count == 2 {
             drawRouteBetweenTwoMarkers(sourceCoordinate: places[0].coordinate, destinationCoordinate: places[1].coordinate)
         }
