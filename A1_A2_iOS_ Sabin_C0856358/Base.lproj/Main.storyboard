@@ -20,9 +20,25 @@
                                 <rect key="frame" x="0.0" y="0.0" width="428" height="926"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                             </mapView>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="JU5-Be-heE">
+                                <rect key="frame" x="332" y="838" width="76" height="67"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="68.666666666666629" id="1eS-Qv-mYW"/>
+                                    <constraint firstAttribute="width" constant="76" id="ztk-J8-2HU"/>
+                                </constraints>
+                                <fontDescription key="fontDescription" type="system" pointSize="18"/>
+                                <state key="normal" backgroundImage="location.fill" catalog="system"/>
+                                <connections>
+                                    <action selector="drawRouteBetweenMarkers:" destination="BYZ-38-t0r" eventType="touchUpInside" id="yyS-6Q-9yb"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <constraints>
+                            <constraint firstItem="JU5-Be-heE" firstAttribute="trailing" secondItem="8bC-Xf-vdC" secondAttribute="trailingMargin" id="TYR-CQ-eDV"/>
+                            <constraint firstItem="JU5-Be-heE" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="793" id="jJ8-NA-bxD"/>
+                        </constraints>
                     </view>
                     <connections>
                         <outlet property="mapView" destination="zff-tR-UE4" id="MXT-Ud-LKe"/>
@@ -34,6 +50,7 @@
         </scene>
     </scenes>
     <resources>
+        <image name="location.fill" catalog="system" width="128" height="121"/>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>

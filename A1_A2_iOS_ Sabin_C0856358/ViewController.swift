@@ -13,6 +13,8 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
     
     @IBOutlet weak var mapView: MKMapView!
     
+    
+    
     // create location manager
     var locationMnager = CLLocationManager()
     
@@ -214,7 +216,59 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
         }
         
     }
+    
+    // function to draw route between two markers
+    func drawRouteBetweenTwoMarkers(sourceCoordinate:CLLocationCoordinate2D, destinationCoordinate:CLLocationCoordinate2D){
+        let sourcePlaceMark = MKPlacemark(coordinate: sourceCoordinate)
+        let destinationPlaceMark = MKPlacemark(coordinate: destinationCoordinate)
+        
+        
+        // request a direction
+        let directionRequest = MKDirections.Request()
+        
+        // assign the source and destination properties of the request
+        directionRequest.source = MKMapItem(placemark: sourcePlaceMark)
+        directionRequest.destination = MKMapItem(placemark: destinationPlaceMark)
+        
+        // transportation type
+        directionRequest.transportType = .automobile
+        
+        // calculate the direction
+        let directions = MKDirections(request: directionRequest)
+        directions.calculate { (response, error) in
+            guard let directionResponse = response else {return}
+            // create the route
+            let route = directionResponse.routes[0]
+            // drawing a polyline
+            self.mapView.addOverlay(route.polyline, level: .aboveRoads)
+        
+            let rect = route.polyline.boundingMapRect
+            self.mapView.setVisibleMapRect(rect, edgePadding: UIEdgeInsets(top: 100, left: 100, bottom: 100, right: 100), animated: true)
+                
+            self.mapView.setRegion(MKCoordinateRegion(rect), animated: true)
+            
+        }
+    }
+    
+    
+    
+    @IBAction func drawRouteBetweenMarkers(_ sender: UIButton) {
+        
+        mapView.removeOverlays(mapView.overlays)
+        
+        if places.count == 3 {
+            drawRouteBetweenTwoMarkers(sourceCoordinate: places[0].coordinate, destinationCoordinate: places[1].coordinate)
+            
+            drawRouteBetweenTwoMarkers(sourceCoordinate: places[1].coordinate, destinationCoordinate: places[2].coordinate)
 
+            drawRouteBetweenTwoMarkers(sourceCoordinate: places[2].coordinate, destinationCoordinate: places[1].coordinate)
+        } else if places.count == 2 {
+            drawRouteBetweenTwoMarkers(sourceCoordinate: places[0].coordinate, destinationCoordinate: places[1].coordinate)
+        }
+        
+        
+    }
+    
 }
 
 
@@ -258,6 +312,11 @@ extension ViewController: MKMapViewDelegate {
             rendrer.fillColor = UIColor.red.withAlphaComponent(0.5)
             rendrer.strokeColor = UIColor.green
             rendrer.lineWidth = 2
+            return rendrer
+        } else if overlay is MKPolyline {
+            let rendrer = MKPolylineRenderer(overlay: overlay)
+            rendrer.strokeColor = UIColor.blue
+            rendrer.lineWidth = 3
             return rendrer
         }
         return MKOverlayRenderer()
