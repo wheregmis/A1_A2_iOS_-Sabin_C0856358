@@ -7,13 +7,13 @@
 
 import UIKit
 import MapKit
+import GLKit
 
 class ViewController: UIViewController, CLLocationManagerDelegate {
 
     
     @IBOutlet weak var mapView: MKMapView!
-    
-    
+
     
     // create location manager
     var locationMnager = CLLocationManager()
@@ -133,32 +133,51 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
         
         
         let nearbyMarker = isNearByMarkerAvailable(coordinate: coordinate)
-        if nearbyMarker == "false"{
-            // appending it to places depending upon if its a first location or second or third
-            if places.count == 0{
-                places.append(Place(title: "A", subtitle: "A", coordinate: coordinate))
-            } else if places.count == 1{
-                places.append(Place(title: "B", subtitle: "B", coordinate: coordinate))
-            } else if places.count == 2{
-                places.append(Place(title: "C", subtitle: "C", coordinate: coordinate))
-                
-                // forcing to draw polygon when we have 3 coordinates only will create a triangle
-                addPolygon()
-            } else {
-                // removing annotation from mapview
-                mapView.removeAnnotations(mapView.annotations)
-                mapView.removeOverlays(mapView.overlays)
-                
-                // removing places from the list
-                places = [Place]()
+        
+        let geoCoder = CLGeocoder()
+        let location = CLLocation(latitude: coordinate.latitude, longitude:  coordinate.longitude) // <- Canada
+        
+
+        geoCoder.reverseGeocodeLocation(location, completionHandler: { (placemarks, _) -> Void in
+
+            placemarks?.forEach { (placemark) in
+
+                if let pro = placemark.administrativeArea {
+                    
+                    if pro == "ON"{
+                        
+                        if nearbyMarker == "false"{
+                            // appending it to places depending upon if its a first location or second or third
+                            if self.places.count == 0{
+                                self.places.append(Place(title: "A", subtitle: "A", coordinate: coordinate))
+                            } else if self.places.count == 1{
+                                self.places.append(Place(title: "B", subtitle: "B", coordinate: coordinate))
+                            } else if self.places.count == 2{
+                                self.places.append(Place(title: "C", subtitle: "C", coordinate: coordinate))
+                                
+                                // forcing to draw polygon when we have 3 coordinates only will create a triangle
+                                self.addPolygon()
+                                self.showDistanceAnnotation()
+                            } else {
+                                // removing annotation from mapview
+                                self.mapView.removeAnnotations(self.mapView.annotations)
+                                self.mapView.removeOverlays(self.mapView.overlays)
+                                
+                                // removing places from the list
+                                self.places = [Place]()
+                            }
+                            
+                            // calling addAnnotationForPlaces function to add annotation for locations
+                            self.addAnnotationForPlaces()
+                        }else{
+                            self.removePlaces(title: nearbyMarker)
+                            self.addAnnotationForPlaces()
+                        }
+                    }
+                    
+                }
             }
-            
-            // calling addAnnotationForPlaces function to add annotation for locations
-            addAnnotationForPlaces()
-        }else{
-            removePlaces(title: nearbyMarker)
-            addAnnotationForPlaces()
-        }
+        })
         
     }
     
@@ -214,14 +233,68 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
                 places.remove(at: places.firstIndex(of: place)!)
             }
         }
-        
     }
+    
+    // function to calculate midpoint of a polygon between two co ordinates  (Reference from stackoverflow)
+    func getCenterCoord(_ LocationPoints: [CLLocationCoordinate2D]) -> CLLocationCoordinate2D{
+            var x:Float = 0.0;
+            var y:Float = 0.0;
+            var z:Float = 0.0;
+            for points in LocationPoints {
+                let lat = GLKMathDegreesToRadians(Float(points.latitude));
+                let long = GLKMathDegreesToRadians(Float(points.longitude));
+
+                x += cos(lat) * cos(long);
+
+                y += cos(lat) * sin(long);
+
+                z += sin(lat);
+            }
+            x = x / Float(LocationPoints.count);
+            y = y / Float(LocationPoints.count);
+            z = z / Float(LocationPoints.count);
+            let resultLong = atan2(y, x);
+            let resultHyp = sqrt(x * x + y * y);
+            let resultLat = atan2(z, resultHyp);
+            let result = CLLocationCoordinate2D(latitude: CLLocationDegrees(GLKMathRadiansToDegrees(Float(resultLat))), longitude: CLLocationDegrees(GLKMathRadiansToDegrees(Float(resultLong))));
+            return result;
+        }
+    
+    func showDistanceAnnotation() {
+            // getting midpoint of polyline from two locations
+            let coordinate1 = getCenterCoord([places[0].coordinate, places[1].coordinate])
+            let coordinate2 = getCenterCoord([places[1].coordinate, places[2].coordinate])
+            let coordinate3 = getCenterCoord([places[2].coordinate, places[0].coordinate])
+        
+            // getting location of each markers
+            let location1 = CLLocation(latitude: places[0].coordinate.latitude, longitude: places[0].coordinate.longitude)
+            let location2 = CLLocation(latitude: places[1].coordinate.latitude, longitude: places[1].coordinate.longitude)
+            let location3 = CLLocation(latitude: places[2].coordinate.latitude, longitude: places[2].coordinate.longitude)
+        
+            // plotting annotations showing distance between two markers in the midpoints
+            let annotation1 = MKPointAnnotation()
+            annotation1.coordinate = coordinate1
+            annotation1.title = String(format: "%.2f", calculateDistance(location1: location1, location2: location2))
+
+            let annotation2 = MKPointAnnotation()
+            annotation2.coordinate = coordinate2
+            annotation2.title = String(format: "%.2f", calculateDistance(location1: location2, location2: location3))
+
+            let annotation3 = MKPointAnnotation()
+            annotation3.coordinate = coordinate3
+            annotation3.title = String(format: "%.2f", calculateDistance(location1: location1, location2: location3))
+
+            // adding annotations to mapview
+            mapView.addAnnotation(annotation1)
+            mapView.addAnnotation(annotation2)
+            mapView.addAnnotation(annotation3)
+        
+        }
     
     // function to draw route between two markers
     func drawRouteBetweenTwoMarkers(sourceCoordinate:CLLocationCoordinate2D, destinationCoordinate:CLLocationCoordinate2D){
         let sourcePlaceMark = MKPlacemark(coordinate: sourceCoordinate)
         let destinationPlaceMark = MKPlacemark(coordinate: destinationCoordinate)
-        
         
         // request a direction
         let directionRequest = MKDirections.Request()
@@ -251,7 +324,7 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
     }
     
     
-    
+    // function to draw route between two markers
     @IBAction func drawRouteBetweenMarkers(_ sender: UIButton) {
         
         mapView.removeOverlays(mapView.overlays)
