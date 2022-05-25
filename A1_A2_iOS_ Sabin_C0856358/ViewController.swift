@@ -16,6 +16,10 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
     // create location manager
     var locationMnager = CLLocationManager()
     
+    // defining user location
+    var userLat:CLLocationDegrees = 0;
+    var userLong:CLLocationDegrees = 0;
+    
     // create the places array
     var places = [Place]()
     
@@ -62,6 +66,10 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
         // Extracting latitude and longitude from the location coordinate
         let latitude = userLocation.coordinate.latitude
         let longitude = userLocation.coordinate.longitude
+        
+        // setting user latitude and longitude
+        userLat = latitude;
+        userLong = longitude;
         
         // calling displayLocation function to display the location of the user
         displayLocation(latitude: latitude, longitude: longitude, title: "My Location", subtitle: "I am here")
@@ -134,6 +142,7 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
         } else {
             // removing annotation from mapview
             mapView.removeAnnotations(mapView.annotations)
+            mapView.removeOverlays(mapView.overlays)
             
             // removing places from the list
             places = [Place]()
@@ -149,13 +158,58 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
         let polygon = MKPolygon(coordinates: coordinates, count: coordinates.count)
         mapView.addOverlay(polygon)
     }
+    
+    func calculateDistance(markerLat: CLLocationDegrees, markerLong: CLLocationDegrees) -> CLLocationDistance{
+        
+        // defining the user location
+        let userLocation = CLLocation(latitude: userLat, longitude: userLong)
+        
+        // defining the marker location
+        let markerLocation = CLLocation(latitude: markerLat, longitude: markerLong)
+        
+        // calculating the distance between marker location and user location in meters
+        let distance: CLLocationDistance = markerLocation.distance(from: userLocation)
+        
+        // returning the distance
+        return distance;
+    }
 
 }
 
 
 extension ViewController: MKMapViewDelegate {
     
-    //MARK: - rendrer for overlay func
+    //MARK: - viewFor annotation method
+    func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+        switch annotation.title {
+        case "A", "B", "C":
+            let annotationView = MKPinAnnotationView(annotation: annotation, reuseIdentifier: "droppablePin")
+            annotationView.pinTintColor = #colorLiteral(red: 0.2588235438, green: 0.7568627596, blue: 0.9686274529, alpha: 1)
+            annotationView.canShowCallout = true
+            annotationView.rightCalloutAccessoryView = UIButton(type: .detailDisclosure)
+            return annotationView
+        default:
+            return nil
+        }
+    }
+    
+    // function to callout accessory control
+    func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
+        // getting latitude and longitude from annotationview
+        let lat = (view.annotation?.coordinate.latitude)!;
+        let long = view.annotation?.coordinate.longitude;
+        
+        // calling function to calculate the distance
+        let distance = calculateDistance(markerLat: lat, markerLong: long!)
+        
+        // showing informational alert to show the distance
+        let alertController = UIAlertController(title: "Distance", message: "Distance between the marker and user location is \(String(format: "%.3f", distance))} meters", preferredStyle: .alert)
+        let cancelAction = UIAlertAction(title: "OK", style: .cancel, handler: nil)
+        alertController.addAction(cancelAction)
+        present(alertController, animated: true, completion: nil)
+    }
+    
+    // function to render overlay for polygon
     func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
         if overlay is MKPolygon {
             let rendrer = MKPolygonRenderer(overlay: overlay)
